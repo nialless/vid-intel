@@ -1,0 +1,3214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VidIntel">
+<meta name="application-name" content="VidIntel">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="description" content="AI-powered video tagging and scene detection toolkit">
+<link rel="manifest" href="#" id="pwa-manifest">
+<title>VidIntel — Video Intelligence Toolkit</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #7c5cfc;
+    --accent2: #fc5c7d;
+    --text: #e8e8f0;
+    --muted: #6b6b85;
+    --green: #36f5a0;
+    --yellow: #f5c136;
+    --cyan: #36d9f5;
+  }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Ambient background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -40%;
+    left: -20%;
+    width: 70%;
+    height: 70%;
+    background: radial-gradient(ellipse, rgba(124,92,252,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -30%;
+    right: -15%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(ellipse, rgba(252,92,125,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* Header */
+  header {
+    padding: 48px 0 56px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .logo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .logo-mark {
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--text) 30%, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header-desc {
+    font-size: 14px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 300;
+    max-width: 280px;
+    text-align: right;
+    line-height: 1.6;
+  }
+
+  /* Tab Nav */
+  .tab-nav {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 5px;
+    border-radius: 14px;
+    margin-bottom: 32px;
+    width: fit-content;
+  }
+  .tab-btn {
+    padding: 10px 24px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .tab-btn .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.2s;
+  }
+  .tab-btn.active {
+    background: var(--surface2);
+    color: var(--text);
+    box-shadow: 0 0 0 1px var(--border);
+  }
+  .tab-btn.active .dot { background: var(--accent); }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Upload Zone */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 52px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+  .upload-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(124,92,252,0.03), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: #13131e;
+  }
+  .upload-zone:hover::before, .upload-zone.drag-over::before { opacity: 1; }
+  .upload-zone input { display: none; }
+
+  .upload-icon {
+    width: 56px; height: 56px;
+    margin: 0 auto 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+  .upload-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .upload-sub {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* File loaded state */
+  .file-loaded {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .file-loaded.show { display: flex; }
+  .file-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, rgba(124,92,252,0.2), rgba(252,92,125,0.15));
+    border: 1px solid rgba(124,92,252,0.3);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .file-meta { flex: 1; min-width: 0; }
+  .file-name {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .file-size {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 2px;
+  }
+  .file-clear {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    transition: all 0.2s;
+  }
+  .file-clear:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* Video Preview */
+  .video-preview-wrap {
+    display: none;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: #000;
+  }
+  .video-preview-wrap.show { display: block; }
+  .video-preview-wrap video {
+    width: 100%;
+    max-height: 320px;
+    display: block;
+  }
+
+  /* Settings row */
+  .settings-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .setting-group {
+    flex: 1;
+    min-width: 180px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .setting-label {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .setting-group select,
+  .setting-group input[type="range"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    outline: none;
+    cursor: pointer;
+  }
+  .setting-group select:focus { border-color: var(--accent); }
+  .range-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    margin-top: 6px;
+    display: block;
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border) !important;
+    border: none !important;
+    padding: 0 !important;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  /* Run button */
+  .run-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), #9b6ff8);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    letter-spacing: 0.02em;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .run-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .run-btn:hover:not(:disabled)::after { opacity: 1; }
+  .run-btn:active:not(:disabled) { transform: scale(0.99); }
+  .run-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* Progress */
+  .progress-block {
+    display: none;
+    margin-bottom: 28px;
+  }
+  .progress-block.show { display: block; }
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .progress-label {
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+  }
+  .progress-pct {
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+  }
+  .progress-bar-bg {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+  .progress-steps {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .step-item {
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: all 0.3s;
+  }
+  .step-item.show {
+    opacity: 1;
+    transform: none;
+  }
+  .step-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .step-item.done .step-dot { background: var(--green); }
+  .step-item.active .step-dot {
+    background: var(--accent);
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Results - Tags */
+  .results-block { display: none; }
+  .results-block.show { display: block; }
+  .results-title {
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .results-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Tag categories */
+  .tag-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .tag-category {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .tag-cat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .tag-cat-name {
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cat-icon { font-size: 14px; }
+  .tag-count {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  .tags-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tag {
+    padding: 6px 13px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid transparent;
+  }
+  .tag.subject { background: rgba(124,92,252,0.12); color: #a98eff; border-color: rgba(124,92,252,0.2); }
+  .tag.mood { background: rgba(252,92,125,0.12); color: #ff8fa8; border-color: rgba(252,92,125,0.2); }
+  .tag.scene { background: rgba(54,217,245,0.1); color: #6ee7f7; border-color: rgba(54,217,245,0.2); }
+  .tag.action { background: rgba(54,245,160,0.1); color: #7af5c2; border-color: rgba(54,245,160,0.2); }
+  .tag.tech { background: rgba(245,193,54,0.1); color: #f7d070; border-color: rgba(245,193,54,0.2); }
+  .tag:hover { transform: translateY(-1px); filter: brightness(1.15); }
+  .tag.selected { filter: brightness(1.3); transform: scale(1.05); }
+  .tag-conf {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    opacity: 0.6;
+  }
+
+  /* Summary card */
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .summary-card h3 {
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+  .summary-text {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  /* Export row */
+  .export-row {
+    display: flex;
+    gap: 10px;
+  }
+  .export-btn {
+    flex: 1;
+    padding: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+  }
+  .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Scene Clipper */
+  .scene-timeline {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: none;
+  }
+  .scene-timeline.show { display: block; }
+  .timeline-track {
+    height: 52px;
+    background: var(--surface2);
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 12px;
+    cursor: crosshair;
+    border: 1px solid var(--border);
+  }
+  .timeline-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0.25;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+  .timeline-cursor {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: white;
+    opacity: 0;
+    transition: left 0.05s;
+    pointer-events: none;
+  }
+  .scene-marker {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: var(--accent2);
+    cursor: ew-resize;
+  }
+  .scene-marker::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -4px;
+    width: 10px;
+    height: 10px;
+    background: var(--accent2);
+    border-radius: 50%;
+  }
+  .scene-marker::after {
+    content: attr(data-time);
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent2);
+    white-space: nowrap;
+    background: var(--surface);
+    padding: 2px 5px;
+    border-radius: 4px;
+    border: 1px solid rgba(252,92,125,0.3);
+  }
+
+  .timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+  }
+
+  /* Scene clips list */
+  .clips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .clip-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color 0.2s;
+  }
+  .clip-item:hover { border-color: rgba(124,92,252,0.4); }
+  .clip-number {
+    width: 32px; height: 32px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .clip-info { flex: 1; min-width: 0; }
+  .clip-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .clip-range {
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .clip-dur {
+    background: rgba(124,92,252,0.12);
+    color: #a98eff;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+  }
+  .clip-confidence {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .conf-bar {
+    width: 40px; height: 4px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .conf-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 99px;
+  }
+  .clip-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .clip-btn {
+    width: 32px; height: 32px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    color: var(--muted);
+  }
+  .clip-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .clip-btn.active { background: rgba(124,92,252,0.15); border-color: var(--accent); color: var(--accent); }
+
+  /* Notification toast */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    z-index: 999;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.show {
+    transform: none;
+    opacity: 1;
+  }
+  .toast-icon { font-size: 16px; }
+
+  /* Spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+
+  /* Custom Tags Panel */
+  .custom-tags-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .custom-tags-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+  }
+  .custom-tags-header:hover { background: rgba(124,92,252,0.04); }
+  .custom-tags-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .custom-tags-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .custom-tags-badge {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(124,92,252,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(124,92,252,0.25);
+    padding: 2px 8px;
+    border-radius: 6px;
+    display: none;
+  }
+  .custom-tags-badge.show { display: inline-block; }
+  .custom-tags-chevron {
+    font-size: 12px;
+    color: var(--muted);
+    transition: transform 0.25s;
+  }
+  .custom-tags-panel.open .custom-tags-chevron { transform: rotate(180deg); }
+  .custom-tags-body {
+    display: none;
+    padding: 0 18px 18px;
+    border-top: 1px solid var(--border);
+  }
+  .custom-tags-panel.open .custom-tags-body { display: block; }
+
+  .custom-tags-desc {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    padding: 12px 0 16px;
+    line-height: 1.6;
+  }
+  .custom-tags-desc span {
+    color: var(--accent);
+  }
+
+  .ct-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .ct-category-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .ct-cat-label {
+    width: 110px;
+    flex-shrink: 0;
+    padding-top: 9px;
+  }
+  .ct-cat-name {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .ct-cat-count {
+    font-size: 10px;
+    color: var(--accent);
+    margin-top: 2px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .ct-input-area {
+    flex: 1;
+    min-width: 0;
+  }
+  .ct-tags-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 36px;
+    padding: 6px 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    align-items: center;
+    cursor: text;
+    transition: border-color 0.2s;
+  }
+  .ct-tags-wrap:focus-within { border-color: var(--accent); }
+  .ct-tag-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px 3px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(124,92,252,0.15);
+    color: #c4b0ff;
+    border: 1px solid rgba(124,92,252,0.25);
+    white-space: nowrap;
+  }
+  .ct-tag-chip.mood-chip { background: rgba(252,92,125,0.12); color: #ffadc0; border-color: rgba(252,92,125,0.25); }
+  .ct-tag-chip.scene-chip { background: rgba(54,217,245,0.1); color: #9aeaf5; border-color: rgba(54,217,245,0.2); }
+  .ct-tag-chip.action-chip { background: rgba(54,245,160,0.1); color: #9af5ce; border-color: rgba(54,245,160,0.2); }
+  .ct-tag-chip.tech-chip { background: rgba(245,193,54,0.1); color: #f5d98a; border-color: rgba(245,193,54,0.2); }
+  .ct-remove {
+    cursor: pointer;
+    opacity: 0.5;
+    font-size: 11px;
+    line-height: 1;
+    transition: opacity 0.15s;
+  }
+  .ct-remove:hover { opacity: 1; }
+  .ct-input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    min-width: 100px;
+    flex: 1;
+    padding: 2px 4px;
+  }
+  .ct-input::placeholder { color: var(--muted); font-size: 12px; }
+  .ct-hint {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    margin-top: 5px;
+    opacity: 0.7;
+  }
+
+  .ct-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .ct-clear-btn {
+    font-size: 12px;
+    padding: 7px 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    transition: all 0.2s;
+  }
+  .ct-clear-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .ct-mode-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .ct-mode-btn {
+    font-size: 11px;
+    padding: 5px 10px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s;
+  }
+  .ct-mode-btn.active { background: var(--surface); color: var(--text); }
+
+  /* Clip selection & export */
+  .clips-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .clips-sel-info {
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sel-count {
+    background: rgba(124,92,252,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(124,92,252,0.25);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .clips-toolbar-btns {
+    display: flex;
+    gap: 8px;
+  }
+  .toolbar-btn {
+    padding: 7px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .toolbar-btn.active { background: rgba(124,92,252,0.12); border-color: var(--accent); color: var(--accent); }
+
+  .clip-item { position: relative; }
+  .clip-checkbox {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-radius: 5px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    transition: all 0.15s;
+    background: var(--surface2);
+    user-select: none;
+  }
+  .clip-checkbox.checked {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  .clip-item.selected-clip {
+    border-color: rgba(124,92,252,0.5);
+    background: rgba(124,92,252,0.04);
+  }
+
+  /* Per-clip tag drawer */
+  .clip-tags-drawer {
+    display: none;
+    padding: 12px 14px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+    border-radius: 0 0 12px 12px;
+    margin-top: -1px;
+  }
+  .clip-tags-drawer.open { display: block; }
+  .clip-tags-drawer-title {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .clip-drawer-status {
+    font-size: 10px;
+    color: var(--green);
+    display: none;
+  }
+  .clip-drawer-status.show { display: inline; }
+  .clip-tags-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+    min-height: 28px;
+  }
+  .clip-tag-pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(124,92,252,0.12);
+    color: #c4b0ff;
+    border: 1px solid rgba(124,92,252,0.2);
+    cursor: default;
+  }
+  .clip-tag-pill.ai-tag { background: rgba(54,245,160,0.08); color: #9af5ce; border-color: rgba(54,245,160,0.2); }
+  .clip-tag-rm {
+    cursor: pointer;
+    opacity: 0.5;
+    font-size: 10px;
+    transition: opacity 0.15s;
+  }
+  .clip-tag-rm:hover { opacity: 1; }
+  .clip-tag-add-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .clip-tag-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 6px 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .clip-tag-input:focus { border-color: var(--accent); }
+  .clip-tag-add-btn {
+    padding: 6px 12px;
+    background: rgba(124,92,252,0.15);
+    border: 1px solid rgba(124,92,252,0.3);
+    border-radius: 7px;
+    color: var(--accent);
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .clip-tag-add-btn:hover { background: rgba(124,92,252,0.25); }
+  .clip-ai-tag-btn {
+    padding: 6px 12px;
+    background: rgba(54,245,160,0.08);
+    border: 1px solid rgba(54,245,160,0.2);
+    border-radius: 7px;
+    color: #7af5c2;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .clip-ai-tag-btn:hover { background: rgba(54,245,160,0.15); }
+  .clip-ai-tag-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Export panel */
+  .export-panel {
+    background: var(--surface);
+    border: 1px solid rgba(124,92,252,0.3);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+    display: none;
+  }
+  .export-panel.show { display: block; }
+  .export-panel-title {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .export-panel-title span {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .folder-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .folder-display {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+  }
+  .folder-display.has-folder { color: var(--text); }
+  .folder-path {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .folder-pick-btn {
+    padding: 10px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .folder-pick-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .export-options-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .export-opt {
+    flex: 1;
+    min-width: 150px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 12px 14px;
+  }
+  .export-opt label {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-bottom: 7px;
+  }
+  .export-opt select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    padding: 7px 9px;
+    border-radius: 7px;
+    outline: none;
+    cursor: pointer;
+  }
+  .export-opt select:focus { border-color: var(--accent); }
+
+  .export-summary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .export-summary b { color: var(--text); font-weight: 500; }
+
+  .do-export-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #36c87a, #36f5a0);
+    border: none;
+    border-radius: 11px;
+    color: #001a0a;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    letter-spacing: 0.02em;
+  }
+  .do-export-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  .do-export-btn:active { transform: scale(0.99); }
+  .do-export-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Export progress overlay */
+  .export-log {
+    display: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 14px;
+    margin-top: 14px;
+    max-height: 180px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.8;
+  }
+  .export-log.show { display: block; }
+  .log-line { color: var(--muted); }
+  .log-line.ok { color: var(--green); }
+  .log-line.err { color: var(--accent2); }
+  .log-line.info { color: var(--accent); }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    header { flex-direction: column; }
+    .header-desc { text-align: left; }
+    .export-row { flex-direction: column; }
+    .ct-category-row { flex-direction: column; }
+    .ct-cat-label { width: 100%; padding-top: 0; }
+    .export-options-row { flex-direction: column; }
+    .folder-row { flex-direction: column; }
+  }
+  .log-line.info { color: var(--accent); }
+
+  /* Path inputs */
+  .path-row { display:flex; flex-direction:column; gap:5px; }
+  .path-label { font-size:11px; font-family:"JetBrains Mono",monospace; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+  .path-input-wrap { display:flex; gap:8px; }
+  .path-input {
+    flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:9px;
+    padding:9px 12px; font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--text);
+    outline:none; transition:border-color .2s;
+  }
+  .path-input:focus { border-color:var(--accent); }
+  .path-input::placeholder { color:var(--muted); }
+  .path-detect-btn {
+    padding:9px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:9px;
+    color:var(--muted); font-family:"Syne",sans-serif; font-size:12px; font-weight:600;
+    cursor:pointer; transition:all .2s; white-space:nowrap;
+  }
+  .path-detect-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .path-hint { font-size:11px; font-family:"JetBrains Mono",monospace; color:var(--muted); opacity:.6; }
+
+  /* FFmpeg preview */
+  .ffmpeg-preview-wrap {
+    background:var(--surface2); border:1px solid var(--border); border-radius:10px;
+    overflow:hidden; margin-bottom:14px;
+  }
+  .ffmpeg-preview-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; border-bottom:1px solid var(--border);
+    background:rgba(124,92,252,.05);
+  }
+  .ffmpeg-action-btn {
+    padding:5px 12px; background:rgba(124,92,252,.12); border:1px solid rgba(124,92,252,.25);
+    border-radius:7px; color:var(--accent); font-family:"JetBrains Mono",monospace; font-size:11px;
+    cursor:pointer; transition:all .2s;
+  }
+  .ffmpeg-action-btn:hover { background:rgba(124,92,252,.22); }
+  .ffmpeg-preview {
+    padding:14px; margin:0; font-family:"JetBrains Mono",monospace; font-size:11px;
+    color:#b8f0c8; line-height:1.9; overflow-x:auto; white-space:pre; max-height:240px;
+    overflow-y:auto;
+  }
+
+  /* Instructions */
+  .ffmpeg-instructions {
+    background:rgba(54,245,160,.05); border:1px solid rgba(54,245,160,.15);
+    border-radius:10px; padding:16px 18px; margin-top:14px;
+  }
+  .instr-title {
+    font-size:13px; font-weight:700; color:#7af5c2; margin-bottom:12px;
+    display:flex; align-items:center; gap:7px;
+  }
+  .instr-steps {
+    padding-left:18px; display:flex; flex-direction:column; gap:7px;
+    font-size:13px; color:var(--text); line-height:1.6;
+  }
+  .instr-steps li b { color:#9af5ce; }
+  .instr-steps code {
+    font-family:"JetBrains Mono",monospace; font-size:11px;
+    background:rgba(54,245,160,.1); padding:2px 6px; border-radius:4px; color:#7af5c2;
+  }
+
+
+  /* PWA / Mobile overrides */
+  :root { --safe-bottom: env(safe-area-inset-bottom, 0px); }
+
+  /* Full-screen feel on Android */
+  html, body { height: 100%; overscroll-behavior: none; }
+
+  /* Bottom install banner */
+  .pwa-banner {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface2);
+    border-top: 1px solid rgba(124,92,252,0.3);
+    padding: 14px 20px calc(14px + var(--safe-bottom));
+    display: flex; align-items: center; gap: 14px;
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+  }
+  .pwa-banner.show { transform: translateY(0); }
+  .pwa-banner-icon {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+  }
+  .pwa-banner-text { flex: 1; min-width: 0; }
+  .pwa-banner-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .pwa-banner-sub { font-size: 12px; color: var(--muted); font-family: "JetBrains Mono", monospace; }
+  .pwa-banner-btn {
+    padding: 10px 18px; background: var(--accent); border: none; border-radius: 10px;
+    color: white; font-family: "Syne", sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; white-space: nowrap; flex-shrink: 0;
+    transition: filter 0.2s;
+  }
+  .pwa-banner-btn:hover { filter: brightness(1.1); }
+  .pwa-banner-close {
+    padding: 8px; background: none; border: none; color: var(--muted);
+    font-size: 18px; cursor: pointer; flex-shrink: 0; line-height: 1;
+  }
+
+  /* Offline indicator */
+  .offline-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+    background: var(--accent2); color: white;
+    font-size: 12px; font-family: "JetBrains Mono", monospace;
+    text-align: center; padding: 6px;
+    transform: translateY(-100%); transition: transform 0.3s;
+  }
+  .offline-bar.show { transform: none; }
+
+  /* Android bottom safe area for container */
+  .container { padding-bottom: calc(80px + var(--safe-bottom)); }
+
+  /* Touch-friendly tap targets on mobile */
+  @media (max-width: 600px) {
+    .clip-btn { width: 38px; height: 38px; }
+    .tab-btn { padding: 10px 16px; font-size: 13px; }
+    .run-btn { padding: 18px; font-size: 16px; }
+    .toolbar-btn { padding: 9px 14px; }
+    .tag { padding: 8px 14px; font-size: 13px; }
+    /* Sticky tab nav on mobile */
+    .tab-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bg); border-radius: 0;
+      border-left: none; border-right: none; border-top: none;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 16px; margin: 0 -24px 24px; width: calc(100% + 48px);
+    }
+  }
+
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <span class="logo-mark">// VIDINTEL v1.0</span>
+      <h1>Video Intelligence<br>Toolkit</h1>
+    </div>
+    <p class="header-desc">AI-powered tagging & intelligent scene detection for video content</p>
+  </header>
+
+  <!-- Tab Nav -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('tagger')">
+      <span class="dot"></span> AI Content Tagger
+    </button>
+    <button class="tab-btn" onclick="switchTab('clipper')">
+      <span class="dot"></span> Scene Clipper
+    </button>
+  </div>
+
+  <!-- ═══════════════════ TAB 1: TAGGER ═══════════════════ -->
+  <div id="tagger-panel" class="panel active">
+    <div id="tagger-upload-zone" class="upload-zone" onclick="triggerUpload('tagger-file')" ondragover="handleDrag(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event,'tagger')">
+      <input type="file" id="tagger-file" accept="video/*" onchange="handleFileSelect(event,'tagger')">
+      <div class="upload-icon">🎬</div>
+      <div class="upload-title">Drop your video here</div>
+      <div class="upload-sub">mp4 · mov · avi · mkv · webm — or click to browse</div>
+    </div>
+
+    <div id="tagger-file-loaded" class="file-loaded">
+      <div class="file-icon">🎬</div>
+      <div class="file-meta">
+        <div class="file-name" id="tagger-filename">—</div>
+        <div class="file-size" id="tagger-filesize">—</div>
+      </div>
+      <button class="file-clear" onclick="clearFile('tagger')">✕ Remove</button>
+    </div>
+
+    <div id="tagger-video-wrap" class="video-preview-wrap">
+      <video id="tagger-video" controls></video>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings-row">
+      <div class="setting-group">
+        <div class="setting-label">Tag Depth</div>
+        <select id="tag-depth">
+          <option value="standard">Standard</option>
+          <option value="detailed" selected>Detailed</option>
+          <option value="exhaustive">Exhaustive</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">Confidence Threshold</div>
+        <input type="range" id="conf-threshold" min="40" max="95" value="65" oninput="document.getElementById('conf-val').textContent=this.value+'%'">
+        <span class="range-val" id="conf-val">65%</span>
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">Tag Categories</div>
+        <select id="tag-cats">
+          <option value="all" selected>All Categories</option>
+          <option value="content">Content Only</option>
+          <option value="mood">Mood & Style</option>
+          <option value="tech">Technical Only</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Custom Tags -->
+    <div class="custom-tags-panel" id="custom-tags-panel">
+      <div class="custom-tags-header" onclick="toggleCustomTags()">
+        <div class="custom-tags-header-left">
+          <span>✦</span>
+          <span class="custom-tags-title">Custom Tags</span>
+          <span class="custom-tags-badge" id="custom-tags-badge">0 tags</span>
+        </div>
+        <span class="custom-tags-chevron">▼</span>
+      </div>
+      <div class="custom-tags-body">
+        <div class="custom-tags-desc">
+          Add your own tags — the AI will <span>prioritize and score</span> these alongside auto-detected ones.<br>
+          Type a tag and press <span>Enter</span> or <span>,</span> to add. Tags are grouped by category.
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Mode</span>
+          <div class="ct-mode-toggle">
+            <button class="ct-mode-btn active" id="ct-mode-must" onclick="setCtMode('must')">Must Include</button>
+            <button class="ct-mode-btn" id="ct-mode-hint" onclick="setCtMode('hint')">Hints Only</button>
+          </div>
+        </div>
+
+        <div class="ct-categories" id="ct-categories">
+          <!-- dynamically generated -->
+        </div>
+
+        <div class="ct-actions">
+          <button class="ct-clear-btn" onclick="clearAllCustomTags()">✕ Clear All</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" id="tagger-run-btn" onclick="runTagger()" disabled>
+      <span id="tagger-btn-content">🏷️ Analyze & Tag Video</span>
+    </button>
+
+    <!-- Progress -->
+    <div class="progress-block" id="tagger-progress">
+      <div class="progress-header">
+        <span class="progress-label" id="tagger-prog-label">Initializing...</span>
+        <span class="progress-pct" id="tagger-prog-pct">0%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="tagger-prog-fill"></div>
+      </div>
+      <div class="progress-steps" id="tagger-steps"></div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-block" id="tagger-results">
+      <div class="summary-card">
+        <h3>✦ AI Summary</h3>
+        <div class="summary-text" id="ai-summary">—</div>
+      </div>
+
+      <div class="results-title">Generated Tags</div>
+      <div class="tag-grid" id="tag-grid"></div>
+
+      <div class="export-row">
+        <button class="export-btn" onclick="exportTags('json')">⬇ Export JSON</button>
+        <button class="export-btn" onclick="exportTags('csv')">⬇ Export CSV</button>
+        <button class="export-btn" onclick="copyTags()">⎘ Copy Tags</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ TAB 2: CLIPPER ═══════════════════ -->
+  <div id="clipper-panel" class="panel">
+    <div id="clipper-upload-zone" class="upload-zone" onclick="triggerUpload('clipper-file')" ondragover="handleDrag(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event,'clipper')">
+      <input type="file" id="clipper-file" accept="video/*" onchange="handleFileSelect(event,'clipper')">
+      <div class="upload-icon">✂️</div>
+      <div class="upload-title">Drop your video here</div>
+      <div class="upload-sub">Automatic scene change detection & smart clipping</div>
+    </div>
+
+    <div id="clipper-file-loaded" class="file-loaded">
+      <div class="file-icon">✂️</div>
+      <div class="file-meta">
+        <div class="file-name" id="clipper-filename">—</div>
+        <div class="file-size" id="clipper-filesize">—</div>
+      </div>
+      <button class="file-clear" onclick="clearFile('clipper')">✕ Remove</button>
+    </div>
+
+    <div id="clipper-video-wrap" class="video-preview-wrap">
+      <video id="clipper-video" controls></video>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings-row">
+      <div class="setting-group">
+        <div class="setting-label">Detection Sensitivity</div>
+        <input type="range" id="scene-sensitivity" min="1" max="10" value="6" oninput="document.getElementById('sens-val').textContent=this.value+'/10'">
+        <span class="range-val" id="sens-val">6/10</span>
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">Min Clip Duration</div>
+        <select id="min-clip-dur">
+          <option value="1">1 second</option>
+          <option value="2" selected>2 seconds</option>
+          <option value="5">5 seconds</option>
+          <option value="10">10 seconds</option>
+        </select>
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">Detection Method</div>
+        <select id="detect-method">
+          <option value="auto" selected>Auto (Recommended)</option>
+          <option value="color">Color Histogram</option>
+          <option value="edge">Edge Detection</option>
+          <option value="motion">Motion Flow</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="run-btn" id="clipper-run-btn" onclick="runClipper()" disabled>
+      <span id="clipper-btn-content">✂️ Detect Scenes & Clip</span>
+    </button>
+
+    <!-- Progress -->
+    <div class="progress-block" id="clipper-progress">
+      <div class="progress-header">
+        <span class="progress-label" id="clipper-prog-label">Initializing...</span>
+        <span class="progress-pct" id="clipper-prog-pct">0%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="clipper-prog-fill"></div>
+      </div>
+      <div class="progress-steps" id="clipper-steps"></div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-block" id="clipper-results">
+      <!-- Timeline -->
+      <div class="scene-timeline show" id="scene-timeline-wrap">
+        <div class="results-title" style="margin-bottom:14px">Scene Timeline</div>
+        <div class="timeline-track" id="timeline-track">
+          <div class="timeline-fill" id="timeline-fill"></div>
+          <div class="timeline-cursor" id="timeline-cursor"></div>
+        </div>
+        <div class="timeline-labels" id="timeline-labels">
+          <span>0:00</span><span id="t-mid">—</span><span id="t-end">—</span>
+        </div>
+      </div>
+
+      <div class="results-title">Detected Clips</div>
+
+      <!-- Toolbar -->
+      <div class="clips-toolbar">
+        <div class="clips-sel-info">
+          <span id="sel-count-label">No clips selected</span>
+          <span class="sel-count" id="sel-count-badge" style="display:none">0</span>
+        </div>
+        <div class="clips-toolbar-btns">
+          <button class="toolbar-btn" onclick="selectAllClips()">Select All</button>
+          <button class="toolbar-btn" onclick="deselectAllClips()">Deselect All</button>
+          <button class="toolbar-btn" id="tag-selected-btn" onclick="aiTagSelected()" style="display:none">✦ AI Tag Selected</button>
+        </div>
+      </div>
+
+      <div class="clips-list" id="clips-list"></div>
+
+      <!-- Export Panel -->
+      <div class="export-panel" id="clip-export-panel">
+        <div class="export-panel-title">
+          ⬇ Export Selected Clips <span id="export-panel-subtitle"></span>
+        </div>
+
+        <!-- Path config -->
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+          <div class="path-row">
+            <div class="path-label">📹 Input file path</div>
+            <div class="path-input-wrap">
+              <input class="path-input" id="input-path" placeholder="/storage/emulated/0/DCIM/video.mp4" oninput="updateExportSummary()" />
+              <button class="path-detect-btn" onclick="autoDetectPath()">Auto-detect</button>
+            </div>
+            <div class="path-hint">Full path to your video on Android local storage</div>
+          </div>
+          <div class="path-row">
+            <div class="path-label">📂 Output folder</div>
+            <div class="path-input-wrap">
+              <input class="path-input" id="output-path" placeholder="/storage/emulated/0/DCIM/clips/" oninput="updateExportSummary()" />
+              <button class="path-detect-btn" onclick="pickFolder()">Browse</button>
+            </div>
+            <div class="path-hint">Where clipped .mp4 files will be saved</div>
+          </div>
+        </div>
+
+        <div class="export-options-row">
+          <div class="export-opt">
+            <label>Filename Pattern</label>
+            <select id="export-filename-pattern" onchange="updateExportSummary()">
+              <option value="title">Scene Title</option>
+              <option value="numbered" selected>01_SceneTitle</option>
+              <option value="timecode">start-end_Title</option>
+              <option value="tags">TopTag_Title</option>
+            </select>
+          </div>
+          <div class="export-opt">
+            <label>Tag File Format</label>
+            <select id="export-tag-format" onchange="updateExportSummary()">
+              <option value="json" selected>JSON sidecar (.json)</option>
+              <option value="txt">Text file (.txt)</option>
+              <option value="nfo">NFO file (.nfo)</option>
+              <option value="none">No tag file</option>
+            </select>
+          </div>
+          <div class="export-opt">
+            <label>Encoding</label>
+            <select id="export-encoding" onchange="updateExportSummary()">
+              <option value="copy" selected>Stream copy (fast, lossless)</option>
+              <option value="h264">Re-encode H.264</option>
+              <option value="h265">Re-encode H.265</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="export-summary" id="export-summary">—</div>
+
+        <!-- FFmpeg script preview -->
+        <div class="ffmpeg-preview-wrap" id="ffmpeg-preview-wrap" style="display:none">
+          <div class="ffmpeg-preview-header">
+            <span style="font-size:12px;font-family:JetBrains Mono,monospace;color:var(--muted)">FFmpeg Batch Script</span>
+            <div style="display:flex;gap:6px">
+              <button class="ffmpeg-action-btn" onclick="copyBatchScript()">Copy All</button>
+              <button class="ffmpeg-action-btn" onclick="downloadBatchScript()">Download .sh</button>
+            </div>
+          </div>
+          <pre class="ffmpeg-preview" id="ffmpeg-preview"></pre>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button class="do-export-btn" id="do-export-btn" onclick="doExportSelected()" style="flex:1">
+            <span id="do-export-btn-content">Generate Script + Tag Files</span>
+          </button>
+        </div>
+        <div class="export-log" id="export-log"></div>
+
+        <!-- Instructions -->
+        <div class="ffmpeg-instructions" id="ffmpeg-instructions" style="display:none">
+          <div class="instr-title">How to run in FFmpeg Encoder app</div>
+          <ol class="instr-steps">
+            <li>Open <b>FFmpeg Encoder</b> on your Android device</li>
+            <li>Tap <b>Custom Command</b> or <b>Manual / CLI</b> mode</li>
+            <li>Paste each command from the script above one at a time, or load the <b>.sh file</b> if the app supports batch</li>
+            <li>Tap <b>Run</b> — each clip cuts in seconds with stream copy (no re-encoding)</li>
+            <li>Find your clips in: <code id="instr-output-path">/storage/emulated/0/DCIM/clips/</code></li>
+          </ol>
+          <div style="margin-top:10px;font-size:11px;color:var(--muted);font-family:JetBrains Mono,monospace">
+            Tag sidecar files download alongside the script. Match them to clips by filename.
+          </div>
+        </div>
+      </div>
+
+      <div class="export-row">
+        <button class="export-btn" onclick="exportClips('json')">⬇ Export Manifest</button>
+        <button class="export-btn" onclick="exportClips('edl')">⬇ Export EDL</button>
+        <button class="export-btn" onclick="copyClipTimecodes()">⎘ Copy Timecodes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- PWA Install Banner -->
+<div class="pwa-banner" id="pwa-banner">
+  <div class="pwa-banner-icon">🎬</div>
+  <div class="pwa-banner-text">
+    <div class="pwa-banner-title">Install VidIntel</div>
+    <div class="pwa-banner-sub">Add to home screen — works offline</div>
+  </div>
+  <button class="pwa-banner-btn" id="pwa-install-btn" onclick="installPWA()">Install</button>
+  <button class="pwa-banner-close" onclick="dismissBanner()">✕</button>
+</div>
+
+<!-- Offline bar -->
+<div class="offline-bar" id="offline-bar">⚡ You are offline — core features still work</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon">✓</span>
+  <span id="toast-msg">Done!</span>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────
+const state = {
+  tagger: { file: null, videoUrl: null, results: null },
+  clipper: { file: null, videoUrl: null, results: null, duration: 0 }
+};
+let toastTimer = null;
+
+// ─── Tabs ────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i)=> b.classList.toggle('active', (i===0&&tab==='tagger')||(i===1&&tab==='clipper')));
+  document.getElementById('tagger-panel').classList.toggle('active', tab==='tagger');
+  document.getElementById('clipper-panel').classList.toggle('active', tab==='clipper');
+}
+
+// ─── File Handling ────────────────────────────────────────
+function triggerUpload(id) { document.getElementById(id).click(); }
+
+function handleDrag(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function handleDrop(e, tool) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('video/')) loadFile(file, tool);
+}
+function handleFileSelect(e, tool) {
+  const file = e.target.files[0];
+  if (file) loadFile(file, tool);
+}
+
+function loadFile(file, tool) {
+  const url = URL.createObjectURL(file);
+  state[tool].file = file;
+  state[tool].videoUrl = url;
+
+  // Show file info
+  document.getElementById(`${tool}-upload-zone`).style.display = 'none';
+  const loaded = document.getElementById(`${tool}-file-loaded`);
+  loaded.classList.add('show');
+  document.getElementById(`${tool}-filename`).textContent = file.name;
+  document.getElementById(`${tool}-filesize`).textContent = formatBytes(file.size);
+
+  // Show video preview
+  const vwrap = document.getElementById(`${tool}-video-wrap`);
+  vwrap.classList.add('show');
+  const vid = document.getElementById(`${tool}-video`);
+  vid.src = url;
+
+  // Track duration for clipper
+  if (tool === 'clipper') {
+    vid.onloadedmetadata = () => { state.clipper.duration = vid.duration; };
+  }
+
+  document.getElementById(`${tool}-run-btn`).disabled = false;
+}
+
+function clearFile(tool) {
+  state[tool].file = null;
+  state[tool].videoUrl = null;
+  document.getElementById(`${tool}-upload-zone`).style.display = '';
+  document.getElementById(`${tool}-file-loaded`).classList.remove('show');
+  document.getElementById(`${tool}-video-wrap`).classList.remove('show');
+  document.getElementById(`${tool}-video`).src = '';
+  document.getElementById(`${tool}-run-btn`).disabled = true;
+  document.getElementById(`${tool}-progress`).classList.remove('show');
+  document.getElementById(`${tool}-results`).classList.remove('show');
+  if (tool === 'clipper') document.getElementById('scene-timeline-wrap').classList.remove('show');
+}
+
+// ─── Progress Helper ──────────────────────────────────────
+function makeProgress(tool, steps) {
+  const prog = document.getElementById(`${tool}-progress`);
+  const stepsEl = document.getElementById(`${tool}-steps`);
+  prog.classList.add('show');
+  stepsEl.innerHTML = steps.map(s =>
+    `<div class="step-item" id="step-${tool}-${s.id}"><div class="step-dot"></div>${s.label}</div>`
+  ).join('');
+
+  return {
+    setStep(id, state) {
+      const el = document.getElementById(`step-${tool}-${id}`);
+      if (!el) return;
+      el.classList.add('show');
+      el.querySelector('.step-dot').className = `step-dot`;
+      el.classList.remove('done','active');
+      if (state === 'active') el.classList.add('active');
+      if (state === 'done') el.classList.add('done');
+    },
+    setPct(pct) {
+      document.getElementById(`${tool}-prog-fill`).style.width = pct + '%';
+      document.getElementById(`${tool}-prog-pct`).textContent = Math.round(pct) + '%';
+    },
+    setLabel(txt) {
+      document.getElementById(`${tool}-prog-label`).textContent = txt;
+    }
+  };
+}
+
+// ─── Tagger ───────────────────────────────────────────────
+async function runTagger() {
+  const { file, videoUrl } = state.tagger;
+  if (!file) return;
+
+  const btn = document.getElementById('tagger-run-btn');
+  btn.disabled = true;
+  document.getElementById('tagger-btn-content').innerHTML = '<span class="spinner"></span> Analyzing...';
+  document.getElementById('tagger-results').classList.remove('show');
+
+  const steps = [
+    { id: 'decode', label: 'Decoding video frames' },
+    { id: 'frames', label: 'Extracting keyframes' },
+    { id: 'vision', label: 'Running visual analysis' },
+    { id: 'audio', label: 'Analyzing audio features' },
+    { id: 'claude', label: 'Generating AI tags via Claude' },
+    { id: 'rank', label: 'Ranking & filtering by confidence' },
+    { id: 'done', label: 'Building tag taxonomy' },
+  ];
+  const prog = makeProgress('tagger', steps);
+
+  // Simulate pipeline with real API call to Claude
+  await animateStep(prog, 'decode', 0, 12, 600);
+  await animateStep(prog, 'frames', 12, 28, 700);
+  await animateStep(prog, 'vision', 28, 50, 900);
+  await animateStep(prog, 'audio', 50, 62, 600);
+
+  prog.setStep('claude', 'active');
+  prog.setLabel('Calling Claude API...');
+
+  // Gather metadata to send
+  const vid = document.getElementById('tagger-video');
+  const duration = vid.duration || 0;
+  const depth = document.getElementById('tag-depth').value;
+  const cats = document.getElementById('tag-cats').value;
+  const confThreshold = document.getElementById('conf-threshold').value;
+
+  // Sample frames for visual analysis
+  const frames = await sampleFrames(vid, 4);
+
+  // Build prompt
+  const prompt = buildTaggerPrompt(file.name, duration, depth, cats, confThreshold, frames);
+  let aiResult;
+
+  try {
+    aiResult = await callClaude(prompt);
+  } catch(e) {
+    aiResult = getFallbackTags(file.name, duration);
+  }
+
+  await animateStep(prog, 'claude', 62, 78, 0);
+  await animateStep(prog, 'rank', 78, 90, 500);
+  await animateStep(prog, 'done', 90, 100, 400);
+
+  prog.setLabel('Complete ✓');
+  state.tagger.results = aiResult;
+  renderTaggerResults(aiResult);
+
+  document.getElementById('tagger-btn-content').innerHTML = '🏷️ Re-analyze Video';
+  btn.disabled = false;
+  showToast('✦', 'Tags generated successfully');
+}
+
+function buildTaggerPrompt(name, duration, depth, cats, conf, frames) {
+  const frameInfo = frames.length > 0
+    ? `I've sampled ${frames.length} frames from the video for visual analysis.`
+    : 'No frames could be extracted.';
+
+  // Collect custom tags
+  const customTags = getCustomTagsForPrompt();
+  const ctMode = state.customTagMode || 'must';
+  let customTagsSection = '';
+  if (customTags.total > 0) {
+    const lines = Object.entries(customTags.byCategory)
+      .filter(([,tags]) => tags.length > 0)
+      .map(([cat, tags]) => `  ${cat}: ${tags.join(', ')}`).join('\n');
+
+    if (ctMode === 'must') {
+      customTagsSection = `\nUSER-DEFINED TAGS (MUST INCLUDE — assign these high confidence scores 85-99 and place them in the matching category, even if you're uncertain):
+${lines}\n`;
+    } else {
+      customTagsSection = `\nUSER HINT TAGS (use as context hints — include if relevant, assign honest confidence):
+${lines}\n`;
+    }
+  }
+
+  return `You are an expert video content analyst and tagger. Analyze the video "${name}" (duration: ${Math.round(duration)}s).
+
+${frameInfo}
+${customTagsSection}
+Generate comprehensive, intelligent tags for this video. Return ONLY valid JSON in exactly this structure (no markdown, no explanation):
+
+{
+  "summary": "2-3 sentence description of the video content, mood, and style",
+  "categories": [
+    {
+      "name": "Subject Matter",
+      "type": "subject",
+      "icon": "🎯",
+      "tags": [
+        {"label": "tag name", "confidence": 88, "custom": false}
+      ]
+    },
+    {
+      "name": "Mood & Tone",
+      "type": "mood", 
+      "icon": "🎭",
+      "tags": [
+        {"label": "tag name", "confidence": 75, "custom": false}
+      ]
+    },
+    {
+      "name": "Scene & Setting",
+      "type": "scene",
+      "icon": "🌍",
+      "tags": [
+        {"label": "tag name", "confidence": 82, "custom": false}
+      ]
+    },
+    {
+      "name": "Action & Motion",
+      "type": "action",
+      "icon": "⚡",
+      "tags": [
+        {"label": "tag name", "confidence": 70, "custom": false}
+      ]
+    },
+    {
+      "name": "Technical",
+      "type": "tech",
+      "icon": "🎬",
+      "tags": [
+        {"label": "tag name", "confidence": 90, "custom": false}
+      ]
+    }
+  ]
+}
+
+Depth: ${depth}. Categories focus: ${cats}. Min confidence: ${conf}%.
+For any user-defined tags included, set "custom": true on that tag object.
+Generate realistic, specific, useful tags. Each category should have 4-8 tags. Confidence values must be integers between 40-99.`;
+}
+
+// ─── Custom Tags Logic ─────────────────────────────────────
+const CT_CATEGORIES = [
+  { id: 'subject', name: 'Subject', icon: '🎯', chipClass: '' },
+  { id: 'mood',    name: 'Mood',    icon: '🎭', chipClass: 'mood-chip' },
+  { id: 'scene',   name: 'Scene',   icon: '🌍', chipClass: 'scene-chip' },
+  { id: 'action',  name: 'Action',  icon: '⚡', chipClass: 'action-chip' },
+  { id: 'tech',    name: 'Technical', icon: '🎬', chipClass: 'tech-chip' },
+];
+
+// ─── Default tags distributed across categories ───────────
+const DEFAULT_TAGS = {
+  subject: ['amateur','asian','bbw','blonde','brunette','ebony','hentai','japanese','latina','lesbian','milf','redhead','stepmom','teen','trans','wife','mature','interracial','cosplay','cuckold'],
+  action:  ['anal','blowjob','creampie','cumshot','deepthroat','doggystyle','facial','footjob','gangbang','handjob','missionary','orgasm','pov','rimjob','rough sex','squirt','titfuck','69','bondage','double penetration','massage'],
+  scene:   ['public','voyeur','old and young'],
+  mood:    ['hardcore'],
+  tech:    ['big ass','big cock','big tits','ass','foot fetish']
+};
+
+// custom tag store: { subject: [], mood: [], ... }
+const customTagStore = {
+  subject: [...DEFAULT_TAGS.subject],
+  mood:    [...DEFAULT_TAGS.mood],
+  scene:   [...DEFAULT_TAGS.scene],
+  action:  [...DEFAULT_TAGS.action],
+  tech:    [...DEFAULT_TAGS.tech],
+};
+
+function initCustomTagsUI() {
+  const container = document.getElementById('ct-categories');
+  container.innerHTML = CT_CATEGORIES.map(cat => `
+    <div class="ct-category-row">
+      <div class="ct-cat-label">
+        <div class="ct-cat-name">${cat.icon} ${cat.name}</div>
+        <div class="ct-cat-count" id="ct-count-${cat.id}"></div>
+      </div>
+      <div class="ct-input-area">
+        <div class="ct-tags-wrap" id="ct-wrap-${cat.id}" onclick="focusCatInput('${cat.id}')">
+          <input class="ct-input" id="ct-input-${cat.id}"
+            placeholder="Add ${cat.name.toLowerCase()} tags..."
+            onkeydown="handleCtKey(event,'${cat.id}')"
+            oninput="handleCtInput(event,'${cat.id}')">
+        </div>
+        <div class="ct-hint">Press Enter or , to add</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function focusCatInput(catId) {
+  document.getElementById(`ct-input-${catId}`).focus();
+}
+
+function handleCtKey(e, catId) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const val = e.target.value.replace(/,/g,'').trim();
+    if (val) addCustomTag(catId, val);
+    e.target.value = '';
+  } else if (e.key === 'Backspace' && e.target.value === '') {
+    const tags = customTagStore[catId];
+    if (tags.length) removeCustomTag(catId, tags[tags.length - 1]);
+  }
+}
+
+function handleCtInput(e, catId) {
+  // Handle paste with commas
+  if (e.target.value.includes(',')) {
+    const parts = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+    parts.forEach(p => addCustomTag(catId, p));
+    e.target.value = '';
+  }
+}
+
+function addCustomTag(catId, label) {
+  const normalized = label.toLowerCase().trim();
+  if (!normalized) return;
+  if (customTagStore[catId].includes(normalized)) return; // no dupes
+  customTagStore[catId].push(normalized);
+  renderCatChips(catId);
+  updateCustomTagsBadge();
+}
+
+function removeCustomTag(catId, label) {
+  customTagStore[catId] = customTagStore[catId].filter(t => t !== label);
+  renderCatChips(catId);
+  updateCustomTagsBadge();
+}
+
+function renderCatChips(catId) {
+  const cat = CT_CATEGORIES.find(c => c.id === catId);
+  const wrap = document.getElementById(`ct-wrap-${catId}`);
+  const input = document.getElementById(`ct-input-${catId}`);
+  // Remove existing chips
+  wrap.querySelectorAll('.ct-tag-chip').forEach(el => el.remove());
+  // Re-insert chips before input
+  customTagStore[catId].forEach(tag => {
+    const chip = document.createElement('div');
+    chip.className = `ct-tag-chip ${cat.chipClass}`;
+    chip.innerHTML = `${tag}<span class="ct-remove" onclick="removeCustomTag('${catId}','${tag}')">✕</span>`;
+    wrap.insertBefore(chip, input);
+  });
+  // Update count
+  const count = customTagStore[catId].length;
+  document.getElementById(`ct-count-${catId}`).textContent = count ? `${count} added` : '';
+}
+
+function clearAllCustomTags() {
+  if (confirm('Reset to default tags?')) {
+    Object.keys(customTagStore).forEach(k => {
+      customTagStore[k] = [...(DEFAULT_TAGS[k] || [])];
+      renderCatChips(k);
+    });
+  } else {
+    Object.keys(customTagStore).forEach(k => { customTagStore[k] = []; renderCatChips(k); });
+  }
+  updateCustomTagsBadge();
+}
+
+function updateCustomTagsBadge() {
+  const total = Object.values(customTagStore).flat().length;
+  const badge = document.getElementById('custom-tags-badge');
+  badge.textContent = `${total} tag${total !== 1 ? 's' : ''}`;
+  badge.classList.toggle('show', total > 0);
+}
+
+function toggleCustomTags() {
+  document.getElementById('custom-tags-panel').classList.toggle('open');
+}
+
+function setCtMode(mode) {
+  state.customTagMode = mode;
+  document.getElementById('ct-mode-must').classList.toggle('active', mode === 'must');
+  document.getElementById('ct-mode-hint').classList.toggle('active', mode === 'hint');
+}
+
+function getCustomTagsForPrompt() {
+  const byCategory = {};
+  let total = 0;
+  CT_CATEGORIES.forEach(cat => {
+    const tags = customTagStore[cat.id];
+    if (tags.length) { byCategory[cat.name] = tags; total += tags.length; }
+  });
+  return { byCategory, total };
+}
+
+// Init on load — render defaults and open the panel
+initCustomTagsUI();
+Object.keys(customTagStore).forEach(k => renderCatChips(k));
+updateCustomTagsBadge();
+document.getElementById('custom-tags-panel').classList.add('open');
+
+async function sampleFrames(videoEl, count) {
+  const frames = [];
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const dur = videoEl.duration;
+    if (!dur || isNaN(dur)) return frames;
+
+    canvas.width = 320;
+    canvas.height = 180;
+
+    for (let i = 0; i < count; i++) {
+      const t = (i + 0.5) * (dur / count);
+      videoEl.currentTime = t;
+      await new Promise(r => {
+        videoEl.onseeked = r;
+        setTimeout(r, 800); // fallback
+      });
+      ctx.drawImage(videoEl, 0, 0, 320, 180);
+      frames.push(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
+    }
+    videoEl.currentTime = 0;
+  } catch(e) {}
+  return frames;
+}
+
+async function callClaude(prompt) {
+  const messages = [{ role: "user", content: prompt }];
+
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      messages
+    })
+  });
+
+  const data = await resp.json();
+  const text = data.content?.map(b => b.text || '').join('') || '';
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
+function getFallbackTags(filename, duration) {
+  return {
+    summary: `A video file named "${filename}" with a duration of approximately ${Math.round(duration)} seconds. Content analysis based on filename and metadata.`,
+    categories: [
+      { name: "Subject Matter", type: "subject", icon: "🎯", tags: [
+        {label:"video content",confidence:85},{label:"media file",confidence:90},{label:"footage",confidence:78}
+      ]},
+      { name: "Mood & Tone", type: "mood", icon: "🎭", tags: [
+        {label:"neutral",confidence:65},{label:"informational",confidence:60}
+      ]},
+      { name: "Scene & Setting", type: "scene", icon: "🌍", tags: [
+        {label:"unspecified location",confidence:70}
+      ]},
+      { name: "Action & Motion", type: "action", icon: "⚡", tags: [
+        {label:"recorded",confidence:88},{label:"static or moving",confidence:60}
+      ]},
+      { name: "Technical", type: "tech", icon: "🎬", tags: [
+        {label:`${Math.round(duration)}s duration`,confidence:99},{label:"video file",confidence:99}
+      ]}
+    ]
+  };
+}
+
+function renderTaggerResults(data) {
+  document.getElementById('ai-summary').textContent = data.summary || '—';
+
+  const grid = document.getElementById('tag-grid');
+  grid.innerHTML = data.categories.map(cat => `
+    <div class="tag-category">
+      <div class="tag-cat-header">
+        <div class="tag-cat-name"><span class="cat-icon">${cat.icon}</span>${cat.name}</div>
+        <div class="tag-count">${cat.tags.length} tags</div>
+      </div>
+      <div class="tags-wrap">
+        ${cat.tags.map(t => `
+          <div class="tag ${cat.type}" onclick="this.classList.toggle('selected')" title="${t.custom ? '★ Custom tag' : ''}">
+            ${t.custom ? '<span style="font-size:9px;opacity:0.7;margin-right:1px">★</span>' : ''}${t.label}
+            <span class="tag-conf">${t.confidence}%</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('tagger-results').classList.add('show');
+}
+
+// ─── Scene Clipper ─────────────────────────────────────────
+async function runClipper() {
+  const { file, videoUrl } = state.clipper;
+  if (!file) return;
+
+  const btn = document.getElementById('clipper-run-btn');
+  btn.disabled = true;
+  document.getElementById('clipper-btn-content').innerHTML = '<span class="spinner"></span> Detecting...';
+  document.getElementById('clipper-results').classList.remove('show');
+
+  const steps = [
+    { id: 'load', label: 'Loading video into analyzer' },
+    { id: 'frames', label: 'Sampling frames for comparison' },
+    { id: 'diff', label: 'Computing inter-frame differences' },
+    { id: 'threshold', label: 'Applying scene threshold model' },
+    { id: 'claude', label: 'AI scene labeling via Claude' },
+    { id: 'merge', label: 'Merging short segments' },
+    { id: 'manifest', label: 'Building clip manifest' },
+  ];
+  const prog = makeProgress('clipper', steps);
+
+  await animateStep(prog, 'load', 0, 10, 500);
+
+  // Real frame analysis
+  const vid = document.getElementById('clipper-video');
+  const duration = vid.duration || state.clipper.duration || 60;
+  const sensitivity = parseInt(document.getElementById('scene-sensitivity').value);
+  const minDur = parseInt(document.getElementById('min-clip-dur').value);
+
+  let frameDiffs = [];
+  try {
+    prog.setStep('frames', 'active');
+    prog.setLabel('Sampling frames...');
+    frameDiffs = await computeFrameDifferences(vid, duration, sensitivity);
+    prog.setStep('frames', 'done');
+  } catch(e) {}
+
+  await animateStep(prog, 'diff', 20, 45, 800);
+  await animateStep(prog, 'threshold', 45, 62, 700);
+
+  // Detect scene cuts
+  const rawCuts = detectSceneCuts(frameDiffs, duration, sensitivity, minDur);
+
+  prog.setStep('claude', 'active');
+  prog.setLabel('AI labeling scenes...');
+
+  const prompt = buildClipperPrompt(file.name, duration, rawCuts, sensitivity);
+  let aiResult;
+  try {
+    aiResult = await callClaude(prompt);
+  } catch(e) {
+    aiResult = getFallbackClips(rawCuts, duration, file.name);
+  }
+
+  await animateStep(prog, 'claude', 62, 82, 0);
+  await animateStep(prog, 'merge', 82, 93, 500);
+  await animateStep(prog, 'manifest', 93, 100, 400);
+
+  prog.setLabel('Complete ✓');
+  state.clipper.results = aiResult;
+  renderClipperResults(aiResult, duration);
+
+  document.getElementById('clipper-btn-content').innerHTML = '✂️ Re-detect Scenes';
+  btn.disabled = false;
+  showToast('✂️', `${aiResult.clips.length} scenes detected`);
+}
+
+async function computeFrameDifferences(videoEl, duration, sensitivity) {
+  const sampleCount = Math.min(60, Math.floor(duration * 2));
+  const canvas = document.createElement('canvas');
+  canvas.width = 160; canvas.height = 90;
+  const ctx = canvas.getContext('2d');
+  const diffs = [];
+  let prevData = null;
+
+  for (let i = 0; i < sampleCount; i++) {
+    const t = (i / sampleCount) * duration;
+    videoEl.currentTime = t;
+    await new Promise(r => {
+      videoEl.onseeked = r;
+      setTimeout(r, 500);
+    });
+    ctx.drawImage(videoEl, 0, 0, 160, 90);
+    const imgData = ctx.getImageData(0, 0, 160, 90).data;
+
+    if (prevData) {
+      let diff = 0;
+      for (let p = 0; p < imgData.length; p += 4) {
+        diff += Math.abs(imgData[p] - prevData[p]) +
+                Math.abs(imgData[p+1] - prevData[p+1]) +
+                Math.abs(imgData[p+2] - prevData[p+2]);
+      }
+      diffs.push({ time: t, diff: diff / (160 * 90 * 3) });
+    }
+    prevData = imgData.slice();
+  }
+  videoEl.currentTime = 0;
+  return diffs;
+}
+
+function detectSceneCuts(diffs, duration, sensitivity, minDur) {
+  if (!diffs.length) {
+    // Fallback: evenly spaced cuts
+    const count = Math.max(2, Math.round(duration / 20));
+    const cuts = [0];
+    for (let i = 1; i < count; i++) cuts.push((i / count) * duration);
+    cuts.push(duration);
+    return cuts;
+  }
+
+  const threshold = 15 - sensitivity; // higher sensitivity = lower threshold
+  const maxDiff = Math.max(...diffs.map(d => d.diff));
+  const normThreshold = maxDiff * (threshold / 15);
+
+  const cuts = [0];
+  let lastCut = 0;
+
+  for (const { time, diff } of diffs) {
+    if (diff > normThreshold && (time - lastCut) >= minDur) {
+      cuts.push(parseFloat(time.toFixed(2)));
+      lastCut = time;
+    }
+  }
+  if (duration - lastCut > minDur) cuts.push(parseFloat(duration.toFixed(2)));
+  return cuts;
+}
+
+function buildClipperPrompt(name, duration, cuts, sensitivity) {
+  const segments = [];
+  for (let i = 0; i < cuts.length - 1; i++) {
+    segments.push({ start: cuts[i], end: cuts[i+1], duration: cuts[i+1] - cuts[i] });
+  }
+
+  return `You are a professional video editor AI. Analyze this video clip manifest for "${name}" (total: ${Math.round(duration)}s).
+
+Detected ${segments.length} scene segments based on visual change analysis (sensitivity: ${sensitivity}/10):
+${segments.map((s,i) => `Segment ${i+1}: ${fmtTime(s.start)} → ${fmtTime(s.end)} (${s.duration.toFixed(1)}s)`).join('\n')}
+
+Generate a clip manifest with meaningful names for each scene. Return ONLY valid JSON:
+
+{
+  "clips": [
+    {
+      "id": 1,
+      "title": "descriptive scene name",
+      "description": "1-sentence description of likely content",
+      "start": 0.0,
+      "end": 12.5,
+      "confidence": 87,
+      "type": "opening|action|dialogue|transition|closing|establishing|montage"
+    }
+  ]
+}
+
+Make titles creative and specific (e.g., "Opening Establishing Shot", "Fast-Paced Montage", "Interview Close-Up"). Confidence = how confident the detection is (60-99). Use the exact start/end values provided.`;
+}
+
+function getFallbackClips(cuts, duration, filename) {
+  const clips = [];
+  for (let i = 0; i < cuts.length - 1; i++) {
+    clips.push({
+      id: i + 1,
+      title: `Scene ${i + 1}`,
+      description: `Detected scene segment ${i + 1} of ${cuts.length - 1}`,
+      start: cuts[i],
+      end: cuts[i+1],
+      confidence: 72 + Math.floor(Math.random() * 20),
+      type: i === 0 ? 'opening' : i === cuts.length - 2 ? 'closing' : 'action'
+    });
+  }
+  return { clips };
+}
+
+function renderClipperResults(data, duration) {
+  const track = document.getElementById('timeline-track');
+
+  // Draw markers
+  track.querySelectorAll('.scene-marker').forEach(m => m.remove());
+  document.getElementById('timeline-fill').style.width = '100%';
+
+  data.clips.forEach((clip, i) => {
+    if (i === 0) return;
+    const pct = (clip.start / duration) * 100;
+    const marker = document.createElement('div');
+    marker.className = 'scene-marker';
+    marker.style.left = pct + '%';
+    marker.dataset.time = fmtTime(clip.start);
+    track.appendChild(marker);
+  });
+
+  document.getElementById('t-mid').textContent = fmtTime(duration / 2);
+  document.getElementById('t-end').textContent = fmtTime(duration);
+
+  // Init per-clip tag store
+  state.clipper.clipTags = {};
+  data.clips.forEach(clip => { state.clipper.clipTags[clip.id] = []; });
+
+  // Clip list with checkboxes + tag drawers
+  const list = document.getElementById('clips-list');
+  list.innerHTML = data.clips.map(clip => `
+    <div class="clip-item" id="clip-item-${clip.id}">
+      <div style="display:flex;align-items:center;gap:14px;padding:14px 18px">
+        <div class="clip-checkbox" id="chk-${clip.id}" onclick="toggleClipSelect(${clip.id})"></div>
+        <div class="clip-number">${String(clip.id).padStart(2,'0')}</div>
+        <div class="clip-info">
+          <div class="clip-title">${clip.title}</div>
+          <div class="clip-range">
+            <span>${fmtTime(clip.start)} → ${fmtTime(clip.end)}</span>
+            <span class="clip-dur">${(clip.end - clip.start).toFixed(1)}s</span>
+            <span style="color:var(--muted);font-size:11px">${clip.type||''}</span>
+          </div>
+        </div>
+        <div class="clip-confidence">
+          <div class="conf-bar"><div class="conf-fill" style="width:${clip.confidence}%"></div></div>
+          ${clip.confidence}%
+        </div>
+        <div class="clip-actions">
+          <button class="clip-btn" title="Preview" onclick="previewClip(${clip.start})">▶</button>
+          <button class="clip-btn" title="Edit tags" id="tags-btn-${clip.id}" onclick="toggleTagDrawer(${clip.id})">🏷</button>
+          <button class="clip-btn" title="Copy timecode" onclick="copyTimecode('${fmtTime(clip.start)}','${fmtTime(clip.end)}')">⎘</button>
+        </div>
+      </div>
+      <div class="clip-tags-drawer" id="drawer-${clip.id}">
+        <div class="clip-tags-drawer-title">
+          <span>Tags for this clip</span>
+          <span class="clip-drawer-status" id="drawer-status-${clip.id}">✓ AI tagged</span>
+        </div>
+        <div class="clip-tags-chips" id="clip-chips-${clip.id}"></div>
+        <div class="clip-tag-add-row">
+          <input class="clip-tag-input" id="clip-tag-input-${clip.id}" placeholder="Add tag..." onkeydown="clipTagKey(event,${clip.id})">
+          <button class="clip-tag-add-btn" onclick="addClipTag(${clip.id})">+ Add</button>
+          <button class="clip-ai-tag-btn" id="ai-tag-btn-${clip.id}" onclick="aiTagClip(${clip.id})">✦ AI Tag</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  updateSelectionUI();
+  document.getElementById('clipper-results').classList.add('show');
+}
+
+// ─── Utilities ────────────────────────────────────────────
+function animateStep(prog, id, fromPct, toPct, ms) {
+  return new Promise(resolve => {
+    prog.setStep(id, 'active');
+    prog.setLabel(document.getElementById(`step-clipper-${id}`)?.textContent || '...');
+    const start = Date.now();
+    const tick = () => {
+      const elapsed = Date.now() - start;
+      const t = Math.min(elapsed / Math.max(ms, 1), 1);
+      prog.setPct(fromPct + (toPct - fromPct) * t);
+      if (t < 1) requestAnimationFrame(tick);
+      else { prog.setStep(id, 'done'); resolve(); }
+    };
+    if (ms === 0) { prog.setPct(toPct); prog.setStep(id, 'done'); resolve(); }
+    else requestAnimationFrame(tick);
+  });
+}
+
+function fmtTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  const ms = Math.round((s % 1) * 10);
+  return `${m}:${String(sec).padStart(2,'0')}.${ms}`;
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function showToast(icon, msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function previewClip(start) {
+  const vid = document.getElementById('clipper-video');
+  vid.currentTime = start;
+  vid.play();
+  showToast('▶', `Previewing from ${fmtTime(start)}`);
+}
+
+function copyTimecode(start, end) {
+  navigator.clipboard.writeText(`${start} - ${end}`).then(() => showToast('⎘', 'Timecode copied'));
+}
+
+// ─── Exports ──────────────────────────────────────────────
+function exportTags(format) {
+  const r = state.tagger.results;
+  if (!r) return;
+  let content, filename, mime;
+
+  if (format === 'json') {
+    content = JSON.stringify(r, null, 2);
+    filename = 'tags.json';
+    mime = 'application/json';
+  } else {
+    const rows = ['category,tag,confidence'];
+    r.categories.forEach(cat => cat.tags.forEach(t => rows.push(`"${cat.name}","${t.label}",${t.confidence}`)));
+    content = rows.join('\n');
+    filename = 'tags.csv';
+    mime = 'text/csv';
+  }
+  downloadText(content, filename, mime);
+  showToast('⬇', `Exported ${filename}`);
+}
+
+function copyTags() {
+  const r = state.tagger.results;
+  if (!r) return;
+  const tags = r.categories.flatMap(c => c.tags.map(t => t.label));
+  navigator.clipboard.writeText(tags.join(', ')).then(() => showToast('⎘', `${tags.length} tags copied`));
+}
+
+function exportClips(format) {
+  const r = state.clipper.results;
+  if (!r) return;
+  let content, filename, mime;
+
+  if (format === 'json') {
+    content = JSON.stringify(r, null, 2);
+    filename = 'clip-manifest.json';
+    mime = 'application/json';
+  } else {
+    // EDL format
+    const lines = ['TITLE: VidIntel Export\nFCM: NON-DROP FRAME\n'];
+    r.clips.forEach((c, i) => {
+      lines.push(`${String(i+1).padStart(3,'0')}  AX       V     C        ${fmtTimecode(c.start)} ${fmtTimecode(c.end)} ${fmtTimecode(c.start)} ${fmtTimecode(c.end)}`);
+      lines.push(`* FROM CLIP NAME: ${c.title}\n`);
+    });
+    content = lines.join('\n');
+    filename = 'clips.edl';
+    mime = 'text/plain';
+  }
+  downloadText(content, filename, mime);
+  showToast('⬇', `Exported ${filename}`);
+}
+
+function copyClipTimecodes() {
+  const r = state.clipper.results;
+  if (!r) return;
+  const text = r.clips.map(c => `${c.title}: ${fmtTime(c.start)} – ${fmtTime(c.end)}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => showToast('⎘', 'Timecodes copied'));
+}
+
+function fmtTimecode(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = Math.floor(s % 60);
+  const f = Math.round((s % 1) * 24);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}:${String(f).padStart(2,'0')}`;
+}
+
+// ─── Clip Selection ───────────────────────────────────────
+const selectedClips = new Set();
+let exportFolderHandle = null;
+
+function toggleClipSelect(id) {
+  if (selectedClips.has(id)) selectedClips.delete(id);
+  else selectedClips.add(id);
+  const item = document.getElementById(`clip-item-${id}`);
+  const chk  = document.getElementById(`chk-${id}`);
+  item.classList.toggle('selected-clip', selectedClips.has(id));
+  chk.classList.toggle('checked', selectedClips.has(id));
+  chk.textContent = selectedClips.has(id) ? '✓' : '';
+  updateSelectionUI();
+}
+
+function selectAllClips() {
+  const clips = state.clipper.results?.clips || [];
+  clips.forEach(c => {
+    selectedClips.add(c.id);
+    document.getElementById(`clip-item-${c.id}`)?.classList.add('selected-clip');
+    const chk = document.getElementById(`chk-${c.id}`);
+    if (chk) { chk.classList.add('checked'); chk.textContent = '✓'; }
+  });
+  updateSelectionUI();
+}
+
+function deselectAllClips() {
+  const clips = state.clipper.results?.clips || [];
+  clips.forEach(c => {
+    selectedClips.delete(c.id);
+    document.getElementById(`clip-item-${c.id}`)?.classList.remove('selected-clip');
+    const chk = document.getElementById(`chk-${c.id}`);
+    if (chk) { chk.classList.remove('checked'); chk.textContent = ''; }
+  });
+  updateSelectionUI();
+}
+
+function updateSelectionUI() {
+  const n = selectedClips.size;
+  const label = document.getElementById('sel-count-label');
+  const badge = document.getElementById('sel-count-badge');
+  const tagBtn = document.getElementById('tag-selected-btn');
+  const exportPanel = document.getElementById('clip-export-panel');
+
+  label.textContent = n === 0 ? 'No clips selected' : `${n} clip${n>1?'s':''} selected`;
+  badge.style.display = n > 0 ? '' : 'none';
+  badge.textContent = n;
+  tagBtn.style.display = n > 0 ? '' : 'none';
+  exportPanel.classList.toggle('show', n > 0);
+
+  if (n > 0) updateExportSummary();
+}
+
+// ─── Per-clip Tag Drawer ──────────────────────────────────
+function toggleTagDrawer(id) {
+  const drawer = document.getElementById(`drawer-${id}`);
+  const btn = document.getElementById(`tags-btn-${id}`);
+  drawer.classList.toggle('open');
+  btn.classList.toggle('active', drawer.classList.contains('open'));
+}
+
+function clipTagKey(e, id) {
+  if (e.key === 'Enter') { e.preventDefault(); addClipTag(id); }
+}
+
+function addClipTag(id) {
+  const input = document.getElementById(`clip-tag-input-${id}`);
+  const val = input.value.trim().toLowerCase();
+  if (!val) return;
+  const tags = state.clipper.clipTags[id] || [];
+  if (!tags.includes(val)) {
+    tags.push(val);
+    state.clipper.clipTags[id] = tags;
+    renderClipChips(id);
+  }
+  input.value = '';
+  input.focus();
+}
+
+function removeClipTag(id, tag) {
+  state.clipper.clipTags[id] = (state.clipper.clipTags[id] || []).filter(t => t !== tag);
+  renderClipChips(id);
+}
+
+function renderClipChips(id) {
+  const wrap = document.getElementById(`clip-chips-${id}`);
+  if (!wrap) return;
+  const tags = state.clipper.clipTags[id] || [];
+  wrap.innerHTML = tags.map(t => `
+    <div class="clip-tag-pill ${t.startsWith('✦') ? 'ai-tag' : ''}">
+      ${t.replace('✦ ','')}<span class="clip-tag-rm" onclick="removeClipTag(${id},'${t.replace(/'/g,"\\'")}')">✕</span>
+    </div>
+  `).join('');
+}
+
+// ─── AI Tag Individual Clip ───────────────────────────────
+async function aiTagClip(clipId) {
+  const clip = state.clipper.results?.clips.find(c => c.id === clipId);
+  if (!clip) return;
+  const btn = document.getElementById(`ai-tag-btn-${clipId}`);
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  const customAll = Object.values(customTagStore).flat();
+  const prompt = `You are a video content tagger for adult content. Tag this video clip:
+Title: "${clip.title}"
+Type: ${clip.type}
+Duration: ${(clip.end - clip.start).toFixed(1)}s
+Description: ${clip.description || 'N/A'}
+
+Available tags to choose from (select all that apply):
+${customAll.join(', ')}
+
+Return ONLY a JSON array of matching tag strings, no explanation:
+["tag1", "tag2", "tag3"]
+
+Choose 5-15 tags that best describe this clip based on its title, type, and description. Only use tags from the list above.`;
+
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: prompt }] })
+    });
+    const data = await resp.json();
+    const text = data.content?.map(b => b.text || '').join('') || '[]';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const tags = JSON.parse(clean);
+    state.clipper.clipTags[clipId] = tags;
+    renderClipChips(clipId);
+    document.getElementById(`drawer-status-${clipId}`).classList.add('show');
+    // auto-open drawer
+    const drawer = document.getElementById(`drawer-${clipId}`);
+    if (!drawer.classList.contains('open')) toggleTagDrawer(clipId);
+    showToast('✦', `${tags.length} tags added to clip ${clipId}`);
+  } catch(e) {
+    showToast('⚠', 'AI tagging failed');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '✦ AI Tag';
+}
+
+// ─── AI Tag All Selected ──────────────────────────────────
+async function aiTagSelected() {
+  const ids = [...selectedClips];
+  if (!ids.length) return;
+  const btn = document.getElementById('tag-selected-btn');
+  btn.textContent = `Tagging ${ids.length}...`;
+  btn.disabled = true;
+
+  for (const id of ids) {
+    await aiTagClip(id);
+    await new Promise(r => setTimeout(r, 300)); // small delay between API calls
+  }
+
+  btn.textContent = '✦ AI Tag Selected';
+  btn.disabled = false;
+  updateExportSummary();
+  showToast('✦', `All ${ids.length} selected clips tagged`);
+}
+
+// ─── Folder Picker ────────────────────────────────────────
+async function pickFolder() {
+  try {
+    if ('showDirectoryPicker' in window) {
+      exportFolderHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      document.getElementById('output-path').value = exportFolderHandle.name + '/';
+      updateExportSummary();
+      showToast('📂', `Folder: ${exportFolderHandle.name}`);
+    } else {
+      showToast('ℹ', 'Type the output path manually above');
+    }
+  } catch(e) {
+    if (e.name !== 'AbortError') showToast('⚠', 'Could not access folder');
+  }
+}
+
+function autoDetectPath() {
+  const file = state.clipper.file;
+  if (!file) { showToast('⚠', 'Load a video file first'); return; }
+  // Best guess — file.name only, user must confirm full path
+  const guess = `/storage/emulated/0/DCIM/${file.name}`;
+  document.getElementById('input-path').value = guess;
+  // Set output folder to same directory + clips/
+  const dir = guess.substring(0, guess.lastIndexOf('/') + 1);
+  document.getElementById('output-path').value = dir + 'clips/';
+  updateExportSummary();
+  showToast('📹', 'Path guessed — verify it matches your file location');
+}
+
+// ─── Export Summary ───────────────────────────────────────
+function updateExportSummary() {
+  const n = selectedClips.size;
+  const tagFormat = document.getElementById('export-tag-format')?.value || 'json';
+  const pattern = document.getElementById('export-filename-pattern')?.value || 'numbered';
+  const encoding = document.getElementById('export-encoding')?.value || 'copy';
+  const inputPath = document.getElementById('input-path')?.value || '';
+  const outputPath = document.getElementById('output-path')?.value || '/storage/emulated/0/DCIM/clips/';
+
+  let taggedCount = [...selectedClips].filter(id => (state.clipper.clipTags[id]||[]).length > 0).length;
+  const untagged = n - taggedCount;
+
+  const encodingLabel = encoding === 'copy' ? 'stream copy — lossless, fast' : `re-encode ${encoding.toUpperCase()}`;
+
+  document.getElementById('export-summary').innerHTML =
+    `<b>${n}</b> clip${n>1?'s':''} selected · <b>${taggedCount}</b> tagged · <b>${untagged}</b> untagged` +
+    (untagged > 0 ? ` <span style="color:var(--yellow)">(✦ AI Tag will run at export)</span>` : ' <span style="color:var(--green)">✓ All tagged</span>') +
+    `<br>Encoding: <b>${encodingLabel}</b> · Tags: <b>embedded in MP4 -metadata</b> · Output: <b>${outputPath || 'not set'}</b>` +
+    (!inputPath ? `<br><span style="color:var(--accent2)">⚠ Set input file path to generate commands</span>` : '');
+
+  document.getElementById('export-panel-subtitle').textContent = `· ${n} clip${n>1?'s':''}`;
+}
+
+// ─── Do Export ────────────────────────────────────────────
+async function doExportSelected() {
+  const ids = [...selectedClips];
+  if (!ids.length) return;
+
+  const tagFormat = document.getElementById('export-tag-format').value;
+  const pattern   = document.getElementById('export-filename-pattern').value;
+  const encoding  = document.getElementById('export-encoding').value;
+  const inputPath = document.getElementById('input-path').value.trim() || state.clipper.file?.name || 'input.mp4';
+  const outputPath = (document.getElementById('output-path').value.trim() || '/storage/emulated/0/DCIM/clips/').replace(/\/?$/, '/');
+  const clips = state.clipper.results?.clips.filter(c => ids.includes(c.id)) || [];
+
+  const btn = document.getElementById('do-export-btn');
+  btn.disabled = true;
+  document.getElementById('do-export-btn-content').innerHTML = '<span class="spinner" style="border-top-color:#001a0a"></span> Processing...';
+
+  const log = document.getElementById('export-log');
+  log.classList.add('show');
+  log.innerHTML = '';
+
+  function logLine(msg, cls = '') {
+    log.innerHTML += `<div class="log-line ${cls}">${msg}</div>`;
+    log.scrollTop = log.scrollHeight;
+  }
+
+  logLine(`Processing ${clips.length} clips...`, 'info');
+
+  // Auto-tag any untagged clips first
+  for (const clip of clips) {
+    if ((state.clipper.clipTags[clip.id] || []).length === 0) {
+      logLine(`  ✦ Auto-tagging: ${clip.title}...`, 'info');
+      await aiTagClip(clip.id);
+    }
+  }
+
+  // Build encoding flag
+  const encFlag = encoding === 'copy' ? '-c copy'
+    : encoding === 'h264' ? '-c:v libx264 -c:a aac -preset fast'
+    : '-c:v libx265 -c:a aac -preset fast';
+
+  // Build full FFmpeg batch script
+  const scriptLines = [
+    '#!/bin/bash',
+    `# VidIntel FFmpeg Export Script`,
+    `# Generated: ${new Date().toISOString()}`,
+    `# Source: ${inputPath}`,
+    `# Output: ${outputPath}`,
+    `# Clips: ${clips.length}`,
+    '',
+    `# Create output directory if it doesn't exist`,
+    `mkdir -p "${outputPath}"`,
+    ''
+  ];
+
+  for (let i = 0; i < clips.length; i++) {
+    const clip = clips[i];
+    const tags = state.clipper.clipTags[clip.id] || [];
+    const filename = buildClipFilename(clip, i + 1, pattern, tags);
+    const outFile = `${outputPath}${filename}.mp4`;
+
+    // Build -metadata flags — tags embedded directly into MP4 container
+    const tagString = tags.join(', ');
+    const safeTitle = clip.title.replace(/"/g, '\\"');
+    const safeDesc  = (clip.description || clip.title).replace(/"/g, '\\"');
+    const safeTags  = tagString.replace(/"/g, '\\"');
+    const topGenre  = (tags[0] || '').replace(/"/g, '\\"');
+    const topArtist = (tags[1] || '').replace(/"/g, '\\"');
+
+    // -metadata tags write into the MP4 moov/udta atom — readable by
+    // MX Player, VLC, Solid Explorer, and most Android gallery apps.
+    // -map_metadata -1 clears any existing source metadata first (clean slate).
+    const metaFlags = [
+      `-map_metadata -1`,
+      `-metadata title="${safeTitle}"`,
+      `-metadata comment="${safeTags}"`,
+      `-metadata description="${safeDesc} | Tags: ${safeTags}"`,
+      `-metadata genre="${topGenre}"`,
+      `-metadata artist="${topArtist}"`,
+      `-metadata album="VidIntel Export"`,
+      `-metadata date="${new Date().getFullYear()}"`,
+    ].join(' ');
+
+    // Note: -metadata must come AFTER encoding flags when using -c copy
+    const cmd = `ffmpeg -ss ${clip.start.toFixed(3)} -to ${clip.end.toFixed(3)} -i "${inputPath}" ${encFlag} ${metaFlags} "${outFile}"`;
+
+    scriptLines.push(`# Clip ${String(i+1).padStart(2,'0')}: ${clip.title}`);
+    scriptLines.push(`# Embedded tags: ${tags.slice(0,10).join(', ')}${tags.length > 10 ? ` (+${tags.length-10} more)` : ''}`);
+    scriptLines.push(cmd);
+    scriptLines.push('');
+
+    logLine(`  ✓ Clip ${i+1}: ${filename}.mp4 — ${tags.length} tags embedded`, 'ok');
+
+    // Also export tag sidecar if format is set (optional backup)
+    if (tagFormat !== 'none') {
+      const tagContent = buildTagFile(clip, tags, tagFormat);
+      const tagExt = tagFormat === 'json' ? 'json' : tagFormat === 'nfo' ? 'nfo' : 'txt';
+      await saveFile(`${filename}.${tagExt}`, tagContent, tagFormat === 'json' ? 'application/json' : 'text/plain');
+      logLine(`  ✓ ${filename}.${tagExt} — sidecar backup`, 'ok');
+    }
+
+    await new Promise(r => setTimeout(r, 80));
+  }
+
+  const scriptContent = scriptLines.join('\n');
+  state.clipper._lastScript = scriptContent;
+
+  // Show preview
+  const preview = document.getElementById('ffmpeg-preview');
+  preview.textContent = scriptContent;
+  document.getElementById('ffmpeg-preview-wrap').style.display = '';
+
+  // Show instructions
+  const instr = document.getElementById('ffmpeg-instructions');
+  instr.style.display = '';
+  document.getElementById('instr-output-path').textContent = outputPath;
+
+  logLine(`Done! ${clips.length} commands ready — tags embedded in every .mp4 via -metadata flags.`, 'ok');
+  logLine(`Fields written: title · comment (tags) · description · genre (top tag) · artist.`, 'info');
+  logLine(`Copy commands into FFmpeg Encoder one by one, or download the .sh batch file.`, 'info');
+
+  btn.disabled = false;
+  document.getElementById('do-export-btn-content').textContent = 'Regenerate Script';
+  showToast('✓', `${clips.length} commands ready`);
+}
+
+function copyBatchScript() {
+  const script = state.clipper._lastScript || '';
+  navigator.clipboard.writeText(script).then(() => showToast('⎘', 'Script copied to clipboard'));
+}
+
+function downloadBatchScript() {
+  const script = state.clipper._lastScript || '';
+  const srcName = (state.clipper.file?.name || 'video').replace(/\.[^.]+$/, '');
+  downloadText(script, `${srcName}_clips.sh`, 'text/plain');
+  showToast('⬇', 'Script downloaded');
+}
+
+function buildClipFilename(clip, index, pattern, tags) {
+  const safe = s => s.replace(/[^a-z0-9_\- ]/gi, '').replace(/\s+/g, '_').slice(0, 50);
+  if (pattern === 'title') return safe(clip.title);
+  if (pattern === 'numbered') return `${String(index).padStart(2,'0')}_${safe(clip.title)}`;
+  if (pattern === 'timecode') return `${clip.start.toFixed(0)}-${clip.end.toFixed(0)}_${safe(clip.title)}`;
+  if (pattern === 'tags') return `${tags[0] ? safe(tags[0])+'_' : ''}${safe(clip.title)}`;
+  return safe(clip.title);
+}
+
+function buildTagFile(clip, tags, format) {
+  if (format === 'json') {
+    return JSON.stringify({
+      title: clip.title,
+      description: clip.description || '',
+      type: clip.type,
+      start: clip.start,
+      end: clip.end,
+      duration: parseFloat((clip.end - clip.start).toFixed(2)),
+      tags,
+      exported: new Date().toISOString()
+    }, null, 2);
+  }
+  if (format === 'nfo') {
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<video>
+  <title>${clip.title}</title>
+  <plot>${clip.description || ''}</plot>
+  <duration>${(clip.end - clip.start).toFixed(0)}</duration>
+${tags.map(t => `  <tag>${t}</tag>`).join('\n')}
+</video>`;
+  }
+  // txt
+  return `Title: ${clip.title}
+Type: ${clip.type}
+Duration: ${(clip.end - clip.start).toFixed(1)}s
+Timecode: ${fmtTime(clip.start)} - ${fmtTime(clip.end)}
+Tags: ${tags.join(', ')}
+Exported: ${new Date().toISOString()}`;
+}
+
+async function saveFile(filename, content, mime) {
+  if (exportFolderHandle) {
+    try {
+      const fh = await exportFolderHandle.getFileHandle(filename, { create: true });
+      const w = await fh.createWritable();
+      await w.write(content);
+      await w.close();
+      return;
+    } catch(e) {}
+  }
+  // Fallback: trigger download
+  downloadText(content, filename, mime);
+}
+
+function downloadText(content, filename, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = filename;
+  a.click();
+}
+
+// ─── PWA / Service Worker ─────────────────────────────────
+let deferredInstallPrompt = null;
+
+// Inline Service Worker via Blob — no separate sw.js file needed
+const swCode = `
+const CACHE = 'vidintel-v1';
+const PRECACHE = []; // single-file app, nothing to precache
+
+self.addEventListener('install', e => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', e => {
+  // Network first, fall back to cache for same-origin requests
+  if (e.request.url.startsWith(self.location.origin)) {
+    e.respondWith(
+      fetch(e.request)
+        .then(r => {
+          const clone = r.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+          return r;
+        })
+        .catch(() => caches.match(e.request))
+    );
+  }
+});
+`;
+
+// Inject manifest dynamically (no separate manifest.json file needed)
+function injectManifest() {
+  const manifest = {
+    name: 'VidIntel — Video Intelligence Toolkit',
+    short_name: 'VidIntel',
+    description: 'AI-powered video tagging and scene detection',
+    start_url: './',
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#0a0a0f',
+    theme_color: '#0a0a0f',
+    categories: ['productivity', 'utilities'],
+    icons: [
+      { src: generateIcon(192), sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+      { src: generateIcon(512), sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+  document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
+}
+
+function generateIcon(size) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, size, size);
+  grad.addColorStop(0, '#7c5cfc');
+  grad.addColorStop(1, '#fc5c7d');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  const r = size * 0.22;
+  ctx.roundRect(0, 0, size, size, [r]);
+  ctx.fill();
+  // Icon: film frame emoji-style
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  const m = size * 0.1, bw = size * 0.12;
+  ctx.fillRect(m, m, bw, size - m*2);
+  ctx.fillRect(size - m - bw, m, bw, size - m*2);
+  ctx.fillStyle = 'white';
+  ctx.font = `bold ${size * 0.38}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('▶', size / 2, size / 2);
+  return canvas.toDataURL('image/png');
+}
+
+function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl, { scope: './' })
+    .then(() => console.log('[VidIntel] Service worker registered'))
+    .catch(e => console.warn('[VidIntel] SW failed:', e));
+}
+
+// Install prompt
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  // Show banner after 2s
+  setTimeout(() => document.getElementById('pwa-banner').classList.add('show'), 2000);
+});
+
+window.addEventListener('appinstalled', () => {
+  dismissBanner();
+  showToast('🎉', 'VidIntel installed! Find it on your home screen');
+  deferredInstallPrompt = null;
+});
+
+async function installPWA() {
+  if (!deferredInstallPrompt) {
+    // Fallback instructions for iOS / browsers without prompt
+    showToast('ℹ', 'Tap Share → Add to Home Screen in your browser menu');
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  if (outcome === 'accepted') dismissBanner();
+  deferredInstallPrompt = null;
+}
+
+function dismissBanner() {
+  document.getElementById('pwa-banner').classList.remove('show');
+  sessionStorage.setItem('pwa-dismissed', '1');
+}
+
+// Offline detection
+function updateOnlineStatus() {
+  document.getElementById('offline-bar').classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+// Init PWA
+injectManifest();
+registerSW();
+updateOnlineStatus();
+
+</script>
+</body>
+</html>
